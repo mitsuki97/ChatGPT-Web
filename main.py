@@ -16,6 +16,13 @@ import pickle
 import asyncio
 import yaml
 
+import os
+from typing import List, Dict, Optional, Generator
+# 目前需要设置代理才可以访问 api
+os.environ["HTTP_PROXY"] = "127.0.0.1:8888"
+os.environ["HTTPS_PROXY"] = "127.0.0.1:8888"
+
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
 
@@ -63,10 +70,7 @@ STREAM_FLAG = True  # 是否开启流式推送
 USER_DICT_FILE = "all_user_dict_v3.pkl"  # 用户信息存储文件（包含版本）
 lock = threading.Lock()  # 用于线程锁
 
-project_info = "## ChatGPT 网页版    \n" \
-               " Code From  " \
-               "[ChatGPT-Web](https://github.com/LiangYang666/ChatGPT-Web)  \n" \
-               "发送`帮助`可获取帮助  \n"
+project_info = "## 欢迎使用 ChatGPT 网页版"
 
 
 def get_response_from_ChatGPT_API(message_context, apikey,
@@ -97,25 +101,28 @@ def get_response_from_ChatGPT_API(message_context, apikey,
     url = "https://api.openai.com/v1/chat/completions"
 
     try:
-        response = requests.post(url, headers=header, data=json.dumps(data))
-        response = response.json()
-        # 判断是否含 choices[0].message.content
-        if "choices" in response \
-                and len(response["choices"]) > 0 \
-                and "message" in response["choices"][0] \
-                and "content" in response["choices"][0]["message"]:
-            data = response["choices"][0]["message"]["content"]
-        else:
-            data = str(response)
+        with requests.Session() as session:
+            response = session.post(url, headers=header, data=json.dumps(data))
+            response.raise_for_status()  # 检查请求的响应状态，如果出现错误将会抛出异常
+            response_data = response.json()  # 获取响应的JSON数据
 
-    except Exception as e:
+            # 判断是否含 choices[0].message.content
+            if "choices" in response_data and response_data["choices"]:
+                message = response_data["choices"][0].get("message")
+                if message and "content" in message:
+                    data = message["content"]
+            else:
+                data = str(response_data)
+
+    except requests.exceptions.RequestException as e:
         logger.error(e)
         return str(e)
 
-    return data
+    return str(data)
 
 
-def get_message_context(message_history, have_chat_context, chat_with_history):
+def get_message_context(message_history: List[Dict[str, str]], have_chat_context: bool,
+                        chat_with_history: bool) -> List[Dict[str, str]]:
     """
     获取上下文
     :param message_history:
@@ -126,32 +133,29 @@ def get_message_context(message_history, have_chat_context, chat_with_history):
     message_context = []
     total = 0
     if chat_with_history:
-        num = min([len(message_history), CHAT_CONTEXT_NUMBER_MAX, have_chat_context])
+        num = min(len(message_history), CHAT_CONTEXT_NUMBER_MAX, have_chat_context)
         # 获取所有有效聊天记录
         valid_start = 0
         valid_num = 0
-        for i in range(len(message_history) - 1, -1, -1):
-            message = message_history[i]
+        for i, message in enumerate(message_history[::-1]):
             if message['role'] in {'assistant', 'user'}:
-                valid_start = i
+                valid_start = len(message_history) - i - 1
                 valid_num += 1
             if valid_num >= num:
                 break
 
-        for i in range(valid_start, len(message_history)):
-            message = message_history[i]
-            if message['role'] in {'assistant', 'user'}:
-                message_context.append(message)
-                total += len(message['content'])
+        message_context = [message for message in message_history[valid_start:] if message['role'] in {'assistant', 'user'}]
+        total = sum(len(message['content']) for message in message_context)
     else:
         message_context.append(message_history[-1])
-        total += len(message_history[-1]['content'])
+        total = len(message_history[-1]['content'])
 
     logger.info(f"len(message_context): {len(message_context)} total: {total}")
     return message_context
 
 
-def handle_messages_get_response(message, apikey, message_history, have_chat_context, chat_with_history):
+def handle_messages_get_response(message: str, apikey: str, message_history: List[Dict[str, str]],
+                                 have_chat_context: bool, chat_with_history: bool) -> str:
     """
     处理用户发送的消息，获取回复
     :param message: 用户发送的消息
@@ -161,16 +165,17 @@ def handle_messages_get_response(message, apikey, message_history, have_chat_con
     :param chat_with_history: 是否连续对话
     """
     message_history.append({"role": "user", "content": message})
-    message_context = get_message_context(message_history, have_chat_context, chat_with_history)
+    _, message_context = get_message_context(message_history, have_chat_context, chat_with_history)
     response = get_response_from_ChatGPT_API(message_context, apikey)
     message_history.append({"role": "assistant", "content": response})
 
     return response
 
 
-def get_response_stream_generate_from_ChatGPT_API(message_context, apikey, message_history,
-                                                  model="gpt-3.5-turbo", temperature=0.9, presence_penalty=0,
-                                                  max_tokens=2000):
+def get_response_stream_generate_from_ChatGPT_API(message_context: List[Dict[str, str]], apikey: str,
+                                                  message_history: List[Dict[str, str]],
+                                                  model: str = "gpt-3.5-turbo", temperature: float = 0.9,
+                                                  presence_penalty: int = 0, max_tokens: int = 2000) -> Generator[str, None, None]:
     """
     从ChatGPT API获取回复
     :param apikey:
@@ -202,13 +207,12 @@ def get_response_stream_generate_from_ChatGPT_API(message_context, apikey, messa
     try:
         response = requests.request("POST", url, headers=header, json=data, stream=True)
 
-        def generate():
+        def generate() -> Generator[str, None, None]:
             stream_content = str()
             one_message = {"role": "assistant", "content": stream_content}
             message_history.append(one_message)
             i = 0
             for line in response.iter_lines():
-                # print(str(line))
                 line_str = str(line, encoding='utf-8')
                 if line_str.startswith("data:"):
                     if line_str.startswith("data: [DONE]"):
@@ -240,17 +244,18 @@ def get_response_stream_generate_from_ChatGPT_API(message_context, apikey, messa
     except Exception as e:
         ee = e
 
-        def generate():
+        def generate() -> Generator[str, None, None]:
             yield "request error:\n" + str(ee)
 
     return generate
 
 
-def handle_messages_get_response_stream(message, apikey, message_history, have_chat_context, chat_with_history):
+def handle_messages_get_response_stream(message: str, apikey: str, message_history: List[Dict[str, str]],
+                                        have_chat_context: bool, chat_with_history: bool) -> Generator[str, None, None]:
     message_history.append({"role": "user", "content": message})
     asyncio_run(save_all_user_dict())
     message_context = get_message_context(message_history, have_chat_context, chat_with_history)
-    generate = get_response_stream_generate_from_ChatGPT_API(message_context, apikey, message_history)
+    _, generate = get_response_stream_generate_from_ChatGPT_API(message_context, apikey, message_history)
     return generate
 
 
@@ -260,13 +265,14 @@ def check_session(current_session):
     :param current_session: 当前session
     :return: 当前session
     """
-    if current_session.get('session_id') is not None:
-        pass
-        logger.debug("existing session, session_id:\t{}".format(current_session.get('session_id')))
+    session_id = current_session.get('session_id')
+    if session_id is not None:
+        logger.debug("existing session, session_id:\t{}".format(session_id))
     else:
-        current_session['session_id'] = uuid.uuid1()
-        logger.info("new session, session_id:\t{}".format(current_session.get('session_id')))
-    return current_session['session_id']
+        session_id = str(uuid.uuid1())
+        current_session['session_id'] = session_id
+        logger.info("new session, session_id:\t{}".format(session_id))
+    return session_id
 
 
 def check_user_bind(current_session):
@@ -286,9 +292,8 @@ def get_user_info(user_id):
     :param user_id: 用户id
     :return: 用户信息
     """
-    lock.acquire()
-    user_info = all_user_dict.get(user_id)
-    lock.release()
+    with lock:
+        user_info = all_user_dict.get(user_id)
     return user_info
 
 
@@ -336,7 +341,8 @@ def download_user_dict_file():
     :return: 用户字典文件
     """
     check_session(session)
-    if request.headers.get("admin-password") is None:
+    admin_password = request.headers.get("admin-password")
+    if admin_password is None:
         success, message = auth(request.headers, session)
         if not success:
             return "未授权，无法下载"
@@ -344,20 +350,18 @@ def download_user_dict_file():
         if user_id is None:
             return "未绑定用户，无法下载"
         select_user_dict = LRUCache(USER_SAVE_MAX)
-        lock.acquire()
-        select_user_dict.put(user_id, all_user_dict.get(user_id))
-        lock.release()
+        with lock:
+            select_user_dict.put(user_id, all_user_dict.get(user_id))
         # 存储为临时文件再发送出去
         with tempfile.NamedTemporaryFile(suffix='.pkl', delete=False, mode='wb') as temp_file:
             # 将 Python 对象使用 pickle 序列化保存到临时文件中
             pickle.dump(select_user_dict, temp_file)
-        response = make_response(send_file(temp_file.name, as_attachment=True))
-        response.headers["Content-Disposition"] = f"attachment; filename={user_id}_of_{USER_DICT_FILE}"
-        response.call_on_close(lambda: os.remove(temp_file.name))
-        return response
-
+            response = make_response(send_file(temp_file.name, as_attachment=True))
+            response.headers["Content-Disposition"] = f"attachment; filename={user_id}_of_{USER_DICT_FILE}"
+            response.call_on_close(lambda: os.remove(temp_file.name))
+            return response
     else:
-        if request.headers.get("admin-password") != ADMIN_PASSWORD:
+        if admin_password != ADMIN_PASSWORD:
             return "管理员密码错误，无法下载"
         response = make_response(send_file(os.path.join(DATA_DIR, USER_DICT_FILE), as_attachment=True))
         response.headers["Content-Disposition"] = f"attachment; filename={USER_DICT_FILE}"
@@ -384,7 +388,8 @@ def upload_user_dict_file():
     check_session(session)
     file = request.files.get('file')  # 获取上传的文件
     if file:
-        if request.headers.get("admin-password") is None:
+        admin_password = request.headers.get("admin-password")
+        if admin_password is None:
             success, message = auth(request.headers, session)
             if not success:
                 return "未授权，无法合并用户记录"
@@ -398,34 +403,32 @@ def upload_user_dict_file():
             upload_user_dict = ""
             with tempfile.NamedTemporaryFile(suffix='.pkl', delete=False, mode='wb') as temp_file:
                 file.save(temp_file.name)
-            # 将 Python 对象使用 pickle 序列化保存到临时文件中
-            try:
-                with open(temp_file.name, 'rb') as temp_file:
-                    upload_user_dict = pickle.load(temp_file)
-            except:
-                return "上传文件格式错误，无法解析以及合并用户记录"
-            finally:
-                os.remove(temp_file.name)
+                # 将 Python 对象使用 pickle 序列化保存到临时文件中
+                try:
+                    with open(temp_file.name, 'rb') as temp_file:
+                        upload_user_dict = pickle.load(temp_file)
+                except:
+                    return "上传文件格式错误，无法解析以及合并用户记录"
+            os.remove(temp_file.name)
             # 判断是否为LRUCache对象
             if not isinstance(upload_user_dict, LRUCache):
                 return "上传文件格式错误，无法合并用户记录"
-            lock.acquire()
-            user_info = all_user_dict.get(user_id)
-            lock.release()
+            with lock:
+                user_info = all_user_dict.get(user_id)
             upload_user_info = upload_user_dict.get(user_id)
             if user_info is None or upload_user_info is None:
                 return "仅能合并相同用户id的记录，请确保所上传的记录与当前用户id一致"
             backup_user_dict_file()
-            for chat_id in upload_user_info['chats'].keys():
+            for chat_id, chat_info in upload_user_info['chats'].items():
                 if user_info['chats'].get(chat_id) is None:
-                    user_info['chats'][chat_id] = upload_user_info['chats'][chat_id]
+                    user_info['chats'][chat_id] = chat_info
                 else:
                     new_chat_id = str(uuid.uuid1())
-                    user_info['chats'][new_chat_id] = upload_user_info['chats'][chat_id]
-            asyncio_run(save_all_user_dict())
+                    user_info['chats'][new_chat_id] = chat_info
+            asyncio.run(save_all_user_dict())
             return '个人用户记录合并完成'
         else:
-            if request.headers.get("admin-password") != ADMIN_PASSWORD:
+            if admin_password != ADMIN_PASSWORD:
                 return "管理员密码错误，无法上传用户记录"
             if not file.filename.endswith(".pkl"):
                 return "上传文件格式错误，无法上传用户记录"
@@ -433,33 +436,29 @@ def upload_user_dict_file():
             upload_user_dict = ""
             with tempfile.NamedTemporaryFile(suffix='.pkl', delete=False, mode='wb') as temp_file:
                 file.save(temp_file.name)
-            # 将 Python 对象使用 pickle 序列化保存到临时文件中
-            try:
-                with open(temp_file.name, 'rb') as temp_file:
-                    upload_user_dict = pickle.load(temp_file)
-            except:
-                return "上传文件格式错误，无法解析以及合并用户记录"
-            finally:
-                os.remove(temp_file.name)
+                # 将 Python 对象使用 pickle 序列化保存到临时文件中
+                try:
+                    with open(temp_file.name, 'rb') as temp_file:
+                        upload_user_dict = pickle.load(temp_file)
+                except:
+                    return "上传文件格式错误，无法解析以及合并用户记录"
+            os.remove(temp_file.name)
             # 判断是否为LRUCache对象
             if not isinstance(upload_user_dict, LRUCache):
                 return "上传文件格式错误，无法合并用户记录"
             backup_user_dict_file()
-            lock.acquire()
-            for user_id in list(upload_user_dict.keys()):
-                if all_user_dict.get(user_id) is None:
-                    all_user_dict.put(user_id, upload_user_dict.get(user_id))
-                else:
-                    for chat_id in upload_user_dict.get(user_id)['chats'].keys():
-                        if all_user_dict.get(user_id)['chats'].get(chat_id) is None:
-                            all_user_dict.get(user_id)['chats'][chat_id] = upload_user_dict.get(user_id)['chats'][
-                                chat_id]
-                        else:
-                            new_chat_id = str(uuid.uuid1())
-                            all_user_dict.get(user_id)['chats'][new_chat_id] = upload_user_dict.get(user_id)['chats'][
-                                chat_id]
-            lock.release()
-            asyncio_run(save_all_user_dict())
+            with lock:
+                for user_id, user_info in upload_user_dict.items():
+                    if all_user_dict.get(user_id) is None:
+                        all_user_dict.put(user_id, user_info)
+                    else:
+                        for chat_id, chat_info in user_info['chats'].items():
+                            if all_user_dict.get(user_id)['chats'].get(chat_id) is None:
+                                all_user_dict.get(user_id)['chats'][chat_id] = chat_info
+                            else:
+                                new_chat_id = str(uuid.uuid1())
+                                all_user_dict.get(user_id)['chats'][new_chat_id] = chat_info
+            asyncio.run(save_all_user_dict())
             return '所有用户记录合并完成'
     else:
         return '文件上传失败'
