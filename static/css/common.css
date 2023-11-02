@@ -47,7 +47,7 @@ body{
     display: none;
 }
 .chat, .newchat {
-    border: 1px solid #ffffff;
+    border: 1px solid #e5e7eb;
     border-radius: 10px;
     padding: 10px;
     background-color: #ffffff;
@@ -180,11 +180,13 @@ body{
     background-color: #fff;
 }
 textarea{
+    cursor: default;
+    /* 默认不小手 */
     flex: 1;
     padding: 15px;
     font-size: 16px;
     border: none;
-    cursor: pointer;
+    /* cursor: pointer; */
     overflow-y: auto;
     overflow-x: hidden;
     outline:none;

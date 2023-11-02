@@ -24,15 +24,13 @@ os.environ["HTTPS_PROXY"] = "127.0.0.1:8888"
 
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.urandom(24)
+app.config['SECRET_KEY'] = os.urandom(12)
 
 DATA_DIR = "data"
 logger = init_logger(file_name=os.path.join(DATA_DIR, "running.log"), stdout=True)
 
 # 适配python3.6
 loop = asyncio.get_event_loop()
-
-
 def asyncio_run(func):
     loop.run_until_complete(func)
 
