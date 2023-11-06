@@ -19,7 +19,8 @@ function toggle_settings_dialog() {
         let top = $(".content").offset().top;
         let left = $(".content").offset().left;
         let width = $(".content").width();
-        let height = $(".content").height() + $(".input-area").height();
+        let height = $(".content").height();
+        // let height = $(".content").height() + $(".input-area").height();
         $("#settings-dialog").css("top", top);
         $("#settings-dialog").css("left", left);
         $("#settings-dialog").css("width", width);
