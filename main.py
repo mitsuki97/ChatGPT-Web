@@ -35,40 +35,46 @@ def asyncio_run(func):
     loop.run_until_complete(func)
 
 
+# 读取配置文件
 with open(os.path.join(DATA_DIR, "config.yaml"), "r", encoding="utf-8") as f:
     config = yaml.load(f, Loader=yaml.FullLoader)
-    if 'HTTPS_PROXY' in config:
-        if os.environ.get('HTTPS_PROXY') is None:  # 优先使用环境变量中的代理，若环境变量中没有代理，则使用配置文件中的代理
-            os.environ['HTTPS_PROXY'] = config['HTTPS_PROXY']
-    if 'PASSWORD' in config:
-        PASSWORD = config['PASSWORD']
-    else:
-        PASSWORD = ""  # 即不使用访问密码
-    if 'ADMIN_PASSWORD' in config:
-        ADMIN_PASSWORD = config['ADMIN_PASSWORD']
-    else:
-        ADMIN_PASSWORD = ""
-    PORT = config['PORT']
-    API_KEY = config['OPENAI_API_KEY']
-    CHAT_CONTEXT_NUMBER_MAX = config[
-        'CHAT_CONTEXT_NUMBER_MAX']  # 连续对话模式下的上下文最大数量 n，即开启连续对话模式后，将上传本条消息以及之前你和GPT对话的n-1条消息
-    USER_SAVE_MAX = config['USER_SAVE_MAX']  # 设置最多存储n个用户，当用户过多时可适当调大
 
-if os.getenv("DEPLOY_ON_RAILWAY") is not None or os.getenv("DEPLOY_ON_ZEABUR"):  # 如果是云部署，需要删除代理
+# 设置默认值
+PASSWORD = ADMIN_PASSWORD = ""
+API_KEY = "YOUR_API_KEY"
+PORT = 8080
+CHAT_CONTEXT_NUMBER_MAX = 10
+USER_SAVE_MAX = 100
+
+# 从配置文件中获取值
+if 'HTTPS_PROXY' in config and not os.environ.get('HTTPS_PROXY'):
+    os.environ['HTTPS_PROXY'] = config['HTTPS_PROXY']
+
+PASSWORD = config.get('PASSWORD', "")
+ADMIN_PASSWORD = config.get('ADMIN_PASSWORD', "")
+PORT = config.get('PORT', PORT)
+API_KEY = config.get('OPENAI_API_KEY', API_KEY)
+CHAT_CONTEXT_NUMBER_MAX = config.get('CHAT_CONTEXT_NUMBER_MAX', CHAT_CONTEXT_NUMBER_MAX)
+USER_SAVE_MAX = config.get('USER_SAVE_MAX', USER_SAVE_MAX)
+
+# 如果是云部署，需要删除代理
+if os.getenv("DEPLOY_ON_RAILWAY") or os.getenv("DEPLOY_ON_ZEABUR"):
     os.environ.pop('HTTPS_PROXY', None)
 
-API_KEY = os.getenv("OPENAI_API_KEY", default=API_KEY)  # 如果环境变量中设置了OPENAI_API_KEY，则使用环境变量中的OPENAI_API_KEY
-PORT = os.getenv("PORT", default=PORT)  # 如果环境变量中设置了PORT，则使用环境变量中的PORT
-PASSWORD = os.getenv("PASSWORD", default=PASSWORD)  # 如果环境变量中设置了PASSWORD，则使用环境变量中的PASSWORD
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", default=ADMIN_PASSWORD)  # 如果环境变量中设置了ADMIN_PASSWORD，则使用环境变量中的ADMIN_PASSWORD
+# 从环境变量中获取值
+API_KEY = os.getenv("OPENAI_API_KEY", API_KEY)
+PORT = os.getenv("PORT", PORT)
+PASSWORD = os.getenv("PASSWORD", PASSWORD)
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", ADMIN_PASSWORD)
 if ADMIN_PASSWORD == "":
-    ADMIN_PASSWORD = PASSWORD  # 如果ADMIN_PASSWORD为空，则使用PASSWORD
+    ADMIN_PASSWORD = PASSWORD
 
 STREAM_FLAG = True  # 是否开启流式推送
 USER_DICT_FILE = "all_user_dict_v3.pkl"  # 用户信息存储文件（包含版本）
 lock = threading.Lock()  # 用于线程锁
 
-project_info = "## 欢迎使用 ChatGPT 网页版"
+
+project_info = "欢迎使用 ChatGPT 网页版"
 
 
 def get_response_from_ChatGPT_API(message_context, apikey,
@@ -88,7 +94,6 @@ def get_response_from_ChatGPT_API(message_context, apikey,
 
     header = {"Content-Type": "application/json",
               "Authorization": "Bearer " + apikey}
-
     data = {
         "model": model,
         "messages": message_context,
@@ -612,6 +617,12 @@ def get_balance(apikey):
                   f"#### 剩余:\t{total - total_usage:.4f}  \n" \
                   f"\n" + recent
 
+def contains_profanity(message):
+    prohibited_words = ["习近平", "共产"]
+    for word in prohibited_words:
+        if word in message:
+            return True
+    return False
 
 @app.route('/returnMessage', methods=['GET', 'POST'])
 def return_message():
@@ -638,6 +649,8 @@ def return_message():
     send_time = messages[-1].get("send_time")
     display_time = bool(messages[-1].get("display_time"))
     url_redirect = {"url_redirect": "/", "user_id": None}
+    if contains_profanity(send_message):
+        return "你的消息包含不允许的词汇。请不要使用冒犯性的语言。"
     if send_message == "帮助":
         return "### 帮助\n" \
                "1. 输入`new:xxx`创建新的用户id\n " \

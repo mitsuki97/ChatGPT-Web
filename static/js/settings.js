@@ -54,7 +54,14 @@ function toggle_chat_setting_dialog() {
         $("#chat-context-size").val(getSelectedChatInfo()["context_size"] ? getSelectedChatInfo()["context_size"] : 5);
         $("#chat-sticky-number").val(getSelectedChatInfo()["sticky_number"] ? getSelectedChatInfo()["sticky_number"] : 0);
         $("#chat-name").val(getSelectedChatInfo().name);
-
+        let top = $(".content").offset().top;
+        let left = $(".content").offset().left;
+        let width = $(".content").width();
+        let height = $(".content").height();
+        $("#chat-setting-dialog").css("top", top);
+        $("#chat-setting-dialog").css("left", left);
+        $("#chat-setting-dialog").css("width", width);
+        $("#chat-setting-dialog").css("height", height);
     } else {
         // 获取设置值
         console.log("关闭设置");
