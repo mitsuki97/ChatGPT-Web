@@ -19,13 +19,26 @@
     <!-- and it's easy to individually load additional languages -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.0/languages/go.min.js"></script>
 
+    <!-- 引入样式element-ui -->
+    <!-- <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css"> -->
+    <!-- 引入组件库 -->
+    <!-- <script src="https://unpkg.com/element-ui/lib/index.js"></script> -->
+
 
     <!-- 新提娜佳 添加-->
-    
+    <script src="/static/js/settings.js"></script>
+<!-- 引入 layui.css -->
+<link href="https://unpkg.com/layui@2.7.6/dist/css/layui.css" rel="stylesheet">
+<!-- 引入 layui.js -->
+<script src="https://unpkg.com/layui@2.7.6/dist/layui.js"></script>
 </head>
-<script src="/static/js/settings.js"></script>
 
-<body>
+
+<!-- <div class="layui-btn-container">
+  <button type="button" class="layui-btn">按钮一</button> 
+  <button type="button" class="layui-btn">按钮二</button> 
+  <button type="button" class="layui-btn">按钮三</button> 
+</div> -->
     <div class="all-container">
 
         <div id="settings-dialog">
@@ -238,11 +251,11 @@
             <div class="input-area">
                 <textarea name="text" id="textarea"></textarea>
                 <div class="button-area">
-                    <button id="stop-btn" class="talk_sub" style="display: none">停止生成</button>
-                    <button id="edit-chat-btn" class="talk_sub">编辑对话</button>
-                    <button id="chmod-btn" class="talk_sub">当前为普通对话</button>
-                    <button id="send-btn" class="talk_sub">发 送</button>
-                </div>
+                    <button id="stop-btn" class="layui-btn layui-btn-primary" style="display: none">停止生成</button>
+                    <button id="edit-chat-btn" class="layui-btn layui-btn-primary">编辑对话</button>
+                    <button id="chmod-btn" class="layui-btn layui-btn-primary">当前为普通对话</button>
+                    <button id="send-btn" class="layui-btn">发 送</button>
+                  </div>
             </div>
         </div>
 

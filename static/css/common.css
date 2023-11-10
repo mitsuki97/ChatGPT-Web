@@ -201,27 +201,10 @@ button{
     display: flex;
     min-height: 40px;
     margin-right: 10px;
-    line-height: 40px;
-    padding: 5px;
+    padding: 10px;
     justify-content: flex-end;
 }
-.button-area button{
-    max-width: 80px;
-    border: none;
-    outline: none;
-    border-radius: 4px;
-    float: right;
-    cursor: pointer;
-}
-.button-area #chmod-btn, .button-area #edit-chat-btn {
-    max-width: 120px;
-}
-.button-area button:hover{
-    background-color: #e0e0e0;
-}
-.button-area button:active{
-    background-color: #bdbdbd;
-}
+
 /* markdown列表样式 */
 .markdown ol, .markdown ul {
     padding-left: 1.5em;
