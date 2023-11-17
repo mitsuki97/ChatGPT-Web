@@ -326,6 +326,7 @@ $('#del-chat-btn').click(function () {
         window.location.reload()
     }
 });
+
 $('#chmod-btn').click(function () {
     let chat_info = getSelectedChatInfo();
     if (!("mode" in chat_info)) {
