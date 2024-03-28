@@ -1,70 +1,50 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
+    <title>ChatGPT</title>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>ChatGPT</title>
     <!--  标签页图标显示-->
     <link rel="shortcut icon" href="/static/favicon-32x32.png" type="image/x-icon">
     <link rel="stylesheet" href="/static/css/common.css">
-
-    <script src="/static/js/jquery.min.js"></script>
-    <script src="/static/js/marked.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML"></script>
-    <script src="https://cdn.staticfile.org/clipboard.js/2.0.4/clipboard.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.0/styles/a11y-dark.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.0/highlight.min.js"></script>
-    <!-- and it's easy to individually load additional languages -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.0/languages/go.min.js"></script>
-
-    <!-- 新提娜佳 添加-->
-    <script src="/static/js/settings.js"></script>
-    <!-- 引入 layui.css -->
     <link href="https://unpkg.com/layui@2.7.6/dist/css/layui.css" rel="stylesheet">
-    <!-- 引入 layui.js -->
-    <script src="https://unpkg.com/layui@2.7.6/dist/layui.js"></script>
-</head>
 
+
+    
+</head>
+<body>
     <div class="all-container">
         <div id="settings-dialog">
             <div class="settings-close-btn" onclick="toggle_settings_dialog()">
                 <svg class="svg-icon" viewBox="0 0 20 20">
-                    <path fill="none"
-                        d="M15.898,4.045c-0.271-0.272-0.713-0.272-0.986,0l-4.71,4.711L5.493,4.045c-0.272-0.272-0.714-0.272-0.986,0s-0.272,0.714,0,0.986l4.709,4.711l-4.71,4.711c-0.272,0.271-0.272,0.713,0,0.986c0.136,0.136,0.314,0.203,0.492,0.203c0.179,0,0.357-0.067,0.493-0.203l4.711-4.711l4.71,4.711c0.137,0.136,0.314,0.203,0.494,0.203c0.178,0,0.355-0.067,0.492-0.203c0.273-0.273,0.273-0.715,0-0.986l-4.711-4.711l4.711-4.711C16.172,4.759,16.172,4.317,15.898,4.045z">
-                    </path>
+                    <path fill="none" d="M15.898,4.045c-0.271-0.272-0.713-0.272-0.986,0l-4.71,4.711L5.493,4.045c-0.272-0.272-0.714-0.272-0.986,0s-0.272,0.714,0,0.986l4.709,4.711l-4.71,4.711c-0.272,0.271-0.272,0.713,0,0.986c0.136,0.136,0.314,0.203,0.492,0.203c0.179,0,0.357-0.067,0.493-0.203l4.711-4.711l4.71,4.711c0.137,0.136,0.314,0.203,0.494,0.203c0.178,0,0.355-0.067,0.492-0.203c0.273-0.273,0.273-0.715,0-0.986l-4.711-4.711l4.711-4.711C16.172,4.759,16.172,4.317,15.898,4.045z"></path>
                 </svg>
             </div>
             <div class="setting-menus">
                 <div class="setting-menu">
-                    <div class="setting-label" style="font-size: 30px">
-                        设置
-                    </div>
+                    <div class="setting-label" style="font-size: 30px">设置</div>
                     <div class="setting">
                         <div class="setting-label">
                             <div>用户ID</div>
-                            <div class="setting-sub-label">
-                                用于绑定你的云端聊天记录
-                            </div>
+                            <div class="setting-sub-label">用于绑定你的云端聊天记录</div>
                         </div>
                         <input type="text" id="user-id" name="user_id">
                     </div>
                     <div class="setting">
                         <div class="setting-label">
                             <div>密码</div>
-                            <div class="setting-sub-label">
-                                访问密码，后台若需要则需要输入
-                            </div>
+                            <div class="setting-sub-label">访问密码，后台若需要则需要输入</div>
                         </div>
                         <input type="password" id="password" name="password">
                     </div>
                     <div class="setting">
                         <div class="setting-label">
                             <div>API Key</div>
-                            <div class="setting-sub-label">
-                                当输入API Key后,可跳过访问密码
-                            </div>
+                            <div class="setting-sub-label">当输入API Key后,可跳过访问密码</div>
                         </div>
                         <input type="text" id="api-key" name="api_key">
                     </div>
@@ -72,31 +52,23 @@
                         <div class="label-svg-button">
                             <div class="setting-label">
                                 <div>下载用户记录</div>
-                                <div class="setting-sub-label">
-                                    下载个人用户记录或所有用户记录
-                                </div>
+                                <div class="setting-sub-label">下载个人用户记录或所有用户记录</div>
                             </div>
                             <div id="userDictFileDownload">
                                 <svg class="svg-icon" viewBox="0 0 20 20">
-                                    <path fill="none"
-                                        d="M15.608,6.262h-2.338v0.935h2.338c0.516,0,0.934,0.418,0.934,0.935v8.879c0,0.517-0.418,0.935-0.934,0.935H4.392c-0.516,0-0.935-0.418-0.935-0.935V8.131c0-0.516,0.419-0.935,0.935-0.935h2.336V6.262H4.392c-1.032,0-1.869,0.837-1.869,1.869v8.879c0,1.031,0.837,1.869,1.869,1.869h11.216c1.031,0,1.869-0.838,1.869-1.869V8.131C17.478,7.099,16.64,6.262,15.608,6.262z M9.513,11.973c0.017,0.082,0.047,0.162,0.109,0.226c0.104,0.106,0.243,0.143,0.378,0.126c0.135,0.017,0.274-0.02,0.377-0.126c0.064-0.065,0.097-0.147,0.115-0.231l1.708-1.751c0.178-0.183,0.178-0.479,0-0.662c-0.178-0.182-0.467-0.182-0.645,0l-1.101,1.129V1.588c0-0.258-0.204-0.467-0.456-0.467c-0.252,0-0.456,0.209-0.456,0.467v9.094L8.443,9.553c-0.178-0.182-0.467-0.182-0.645,0c-0.178,0.184-0.178,0.479,0,0.662L9.513,11.973z">
-                                    </path>
+                                    <path fill="none" d="M15.608,6.262h-2.338v0.935h2.338c0.516,0,0.934,0.418,0.934,0.935v8.879c0,0.517-0.418,0.935-0.934,0.935H4.392c-0.516,0-0.935-0.418-0.935-0.935V8.131c0-0.516,0.419-0.935,0.935-0.935h2.336V6.262H4.392c-1.032,0-1.869,0.837-1.869,1.869v8.879c0,1.031,0.837,1.869,1.869,1.869h11.216c1.031,0,1.869-0.838,1.869-1.869V8.131C17.478,7.099,16.64,6.262,15.608,6.262z M9.513,11.973c0.017,0.082,0.047,0.162,0.109,0.226c0.104,0.106,0.243,0.143,0.378,0.126c0.135,0.017,0.274-0.02,0.377-0.126c0.064-0.065,0.097-0.147,0.115-0.231l1.708-1.751c0.178-0.183,0.178-0.479,0-0.662c-0.178-0.182-0.467-0.182-0.645,0l-1.101,1.129V1.588c0-0.258-0.204-0.467-0.456-0.467c-0.252,0-0.456,0.209-0.456,0.467v9.094L8.443,9.553c-0.178-0.182-0.467-0.182-0.645,0c-0.178,0.184-0.178,0.479,0,0.662L9.513,11.973z"></path>
                                 </svg>
                             </div>
                         </div>
                         <div class="label-svg-button">
                             <div class="setting-label">
                                 <div>上传并合并用户记录</div>
-                                <div class="setting-sub-label">
-                                    上传并合并个人用户记录或所有用户记录
-                                </div>
+                                <div class="setting-sub-label">上传并合并个人用户记录或所有用户记录</div>
                             </div>
                             <div>
                                 <label for="userDictFileUpload">
                                     <svg class="svg-icon" viewBox="0 0 20 20">
-                                        <path fill="none"
-                                            d="M8.416,3.943l1.12-1.12v9.031c0,0.257,0.208,0.464,0.464,0.464c0.256,0,0.464-0.207,0.464-0.464V2.823l1.12,1.12c0.182,0.182,0.476,0.182,0.656,0c0.182-0.181,0.182-0.475,0-0.656l-1.744-1.745c-0.018-0.081-0.048-0.16-0.112-0.224C10.279,1.214,10.137,1.177,10,1.194c-0.137-0.017-0.279,0.02-0.384,0.125C9.551,1.384,9.518,1.465,9.499,1.548L7.76,3.288c-0.182,0.181-0.182,0.475,0,0.656C7.941,4.125,8.234,4.125,8.416,3.943z M15.569,6.286h-2.32v0.928h2.32c0.512,0,0.928,0.416,0.928,0.928v8.817c0,0.513-0.416,0.929-0.928,0.929H4.432c-0.513,0-0.928-0.416-0.928-0.929V8.142c0-0.513,0.416-0.928,0.928-0.928h2.32V6.286h-2.32c-1.025,0-1.856,0.831-1.856,1.856v8.817c0,1.025,0.832,1.856,1.856,1.856h11.138c1.024,0,1.855-0.831,1.855-1.856V8.142C17.425,7.117,16.594,6.286,15.569,6.286z">
-                                        </path>
+                                        <path fill="none" d="M8.416,3.943l1.12-1.12v9.031c0,0.257,0.208,0.464,0.464,0.464c0.256,0,0.464-0.207,0.464-0.464V2.823l1.12,1.12c0.182,0.182,0.476,0.182,0.656,0c0.182-0.181,0.182-0.475,0-0.656l-1.744-1.745c-0.018-0.081-0.048-0.16-0.112-0.224C10.279,1.214,10.137,1.177,10,1.194c-0.137-0.017-0.279,0.02-0.384,0.125C9.551,1.384,9.518,1.465,9.499,1.548L7.76,3.288c-0.182,0.181-0.182,0.475,0,0.656C7.941,4.125,8.234,4.125,8.416,3.943z M15.569,6.286h-2.32v0.928h2.32c0.512,0,0.928,0.416,0.928,0.928v8.817c0,0.513-0.416,0.929-0.928,0.929H4.432c-0.513,0-0.928-0.416-0.928-0.929V8.142c0-0.513,0.416-0.928,0.928-0.928h2.32V6.286h-2.32c-1.025,0-1.856,0.831-1.856,1.856v8.817c0,1.025,0.832,1.856,1.856,1.856h11.138c1.024,0,1.855-0.831,1.855-1.856V8.142C17.425,7.117,16.594,6.286,15.569,6.286z"></path>
                                     </svg>
                                 </label>
                                 <input type="file" id="userDictFileUpload" style="display:none;">
@@ -107,6 +79,7 @@
                 </div>
             </div>
         </div>
+        
         <div id="chat-setting-dialog" style="display: none;">
             <div class="settings-close-btn" onclick="toggle_chat_setting_dialog()">
                 <svg class="svg-icon" viewBox="0 0 20 20">
@@ -234,26 +207,31 @@
                     <button id="stop-btn" class="layui-btn layui-btn-primary" style="display: none">停止生成</button>
                     <button id="edit-chat-btn" class="layui-btn layui-btn-primary">编辑对话</button>
                     <button id="chmod-btn" class="layui-btn layui-btn-primary">当前为普通对话</button>
-                    <button id="send-btn" class="layui-btn">发 送</button>
+                    <button id="send-btn" class="layui-btn">发送</button>
                   </div>
             </div>
         </div>
-
+            <!--  当移动到消息框时显示的复制按钮 默认不显示，由js控制显示 -->
+        <div class="menu" id="menu">
+            <button class="menu-btn" id="copy-btn">复制</button>
+            <button class="menu-btn" id="resend-btn">重新发送</button>
+            <i class="layui-icon layui-icon-refresh" id="resend-btn"></i> 
+        </div>
     </div>
-    <!--  当移动到消息框时显示的复制按钮 默认不显示，由js控制显示 -->
-    <div class="menu" id="menu">
-        <button class="menu-btn" id="copy-btn">复制</button>
-        <button class="menu-btn" id="resend-btn">重新发送</button>
-        <i class="layui-icon layui-icon-refresh" id="resend-btn"></i> 
-    </div>
-
-
 </body>
+
+<script src="/static/js/jquery.min.js"></script>
+<script src="/static/js/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML"></script>
+<script src="https://cdn.staticfile.org/clipboard.js/2.0.4/clipboard.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.0/languages/go.min.js"></script>
+<script src="/static/js/settings.js"></script>
+<script src="https://unpkg.com/layui@2.7.6/dist/layui.js"></script>
 <script src="/static/js/uiDisplay.js"></script>
 <script src="/static/js/messageFormat.js"></script>
 <script src="/static/js/utils.js"></script>
 <script src="/static/js/chatFunctions.js"></script>
 <script src="/static/js/clickEventHandler.js"></script>
 <script src="/static/js/loadInit.js"></script>
-
 </html>
