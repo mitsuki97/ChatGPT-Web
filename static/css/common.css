@@ -36,6 +36,29 @@ body{
     display: flex;
     flex-flow: column;
 }
+
+.hover-image {
+    position: relative;
+    display: inline-block;
+}
+
+.hover-image::before {
+    content: "";
+    background-image: url("/static/kpbl1.jpg");
+    width: 200px;
+    height: 200px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.hover-image:hover::before {
+    opacity: 1;
+}
+
 .chat-list{
     overflow-y: scroll;
     flex: 1;

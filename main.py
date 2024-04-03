@@ -652,8 +652,7 @@ def return_message():
     if contains_profanity(send_message):
         return "你的消息包含不允许的词汇。请不要使用冒犯性的语言。"
     if send_message == "帮助":
-        return "### 帮助\n" \
-               "1. 输入`new:xxx`创建新的用户id\n " \
+        return "1. 输入`new:xxx`创建新的用户id\n " \
                "2. 输入`id:your_id`切换到已有用户id，新会话时无需加`id:`进入已有用户\n" \
                "3. 输入`rename_id:xxx`可将当前用户id更改\n" \
                "4. 输入`查余额`可获得余额信息及最近几天使用量\n" \
